@@ -1,0 +1,68 @@
+name: Generate Fortnightly AI Digest
+
+on:
+  schedule:
+    # Runs at 08:00 UTC every other Friday
+    # Weeks 1, 3, 5... of the year (odd ISO week numbers)
+    # GitHub Actions doesn't support "every 2 weeks" natively,
+    # so we run every Friday and the script checks the week number.
+    - cron: '0 8 * * 5'
+  workflow_dispatch:
+    inputs:
+      force_run:
+        description: 'Force run even if not a digest week'
+        required: false
+        default: 'false'
+
+jobs:
+  generate-digest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if this is a digest week
+        id: week_check
+        run: |
+          WEEK=$(date +%V)
+          FORCE="${{ github.event.inputs.force_run }}"
+          if [ "$FORCE" = "true" ]; then
+            echo "run=true" >> $GITHUB_OUTPUT
+            echo "Forced run — skipping week check."
+          elif [ $((WEEK % 2)) -eq 1 ]; then
+            echo "run=true" >> $GITHUB_OUTPUT
+            echo "Week $WEEK — digest week. Running."
+          else
+            echo "run=false" >> $GITHUB_OUTPUT
+            echo "Week $WEEK — not a digest week. Skipping."
+          fi
+
+      - name: Set up Python
+        if: steps.week_check.outputs.run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.week_check.outputs.run == 'true'
+        run: |
+          pip install anthropic
+
+      - name: Generate digest
+        if: steps.week_check.outputs.run == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python digest.py --output-dir digests/
+
+      - name: Commit and push digest
+        if: steps.week_check.outputs.run == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Actions"
+          git add digests/
+          git diff --staged --quiet || git commit -m "digest: $(date +'%Y-%m-%d')"
+          git push
