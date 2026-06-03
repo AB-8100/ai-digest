@@ -170,10 +170,16 @@ Two parts — trends first, then specifics:
 **Market trends (UK/London focus)**
 - What's hot and what's cooling in the London and UK AI job market specifically
 - Role types gaining traction: AI PM, ML Engineer, AI Solutions Architect, MLOps, AI Agent Architect, etc.
-- Salary signals in £ (GBP) — London market rates. Do not quote USD salaries. If only US data is available, note it as a US figure and do not convert
 - In-demand skills, hiring patterns at UK labs vs enterprises vs startups
 - Job displacement signals — where headcount is shrinking due to AI automation (support, junior legal, etc.)
 - Reference UK-specific sources where possible: LinkedIn UK data, Reed, Otta/Welcome to the Jungle UK, Tech Nation, GlassDoor UK
+
+**AI PM salary benchmarks (London, £ GBP)**
+Report salaries split by two specific experience bands — do not blend them:
+- **Band 1 — consulting background + 1–2 years AI PM experience**: typical base salary range, total comp if known, type of employer (startup vs enterprise vs consultancy)
+- **Band 2 — 3–4 years AI PM experience**: typical base salary range, total comp if known, how the profile shifts (skills expected, seniority title, employer type)
+- If only US data is available, note it clearly as a US figure — do not convert to £ or present as a UK rate
+- Source any figures you cite (LinkedIn Salary, Glassdoor UK, Reed, job postings, salary surveys)
 
 **Companies actively hiring (UK-first)**
 - Strongly prioritise London-headquartered or UK-present AI companies
@@ -247,9 +253,9 @@ Use 18–22 web searches to cover all sections thoroughly. Search strategy:
 3. **AI PM Tools & Skills**: search "AI product manager tools 2026", "AI PM workflow tools", "best AI meeting notes tool comparison", "NotebookLM use cases", "Cursor for product managers", "AI tools for consultants 2026", "prompt management tools" — pick 3–4 tools worth highlighting this week
 4. **ML Fundamentals**: search for a strong explainer on one specific ML technique published recently — look for the primary source blog post or paper and link directly to it
 5. **Jobs & Hiring**:
-   - UK trends: search "AI jobs London 2026", "AI product manager salary London GBP", "UK AI hiring trends 2026", "London fintech AI roles"
+   - UK trends: search "AI jobs London 2026", "UK AI hiring trends 2026", "London fintech AI roles"
+   - Salary benchmarks: search "AI product manager salary London 2026 GBP", "AI PM salary UK consulting background", "AI product manager salary 1-2 years experience London", "AI product manager salary 3-4 years experience UK", "Glassdoor AI PM London salary", "LinkedIn salary AI product manager UK" — report figures split by Band 1 (consulting background + 1–2 yrs AI PM) and Band 2 (3–4 yrs AI PM); flag any USD figures as US rates
    - Companies: search "AI startup hiring London 2026", "Quantexa jobs", "Synthesia careers London", "Wayve jobs", "Harvey AI London", "Luminance AI hiring", "ElevenLabs London jobs", "Isomorphic Labs careers"
-   - All salaries must be quoted in £ GBP. Do not convert USD figures
    - Look for recently funded UK AI startups in a hiring surge
 6. **Regulatory**: search "EU AI Act update 2026", "AI regulation UK 2026", "UK AI Safety Institute", "AI governance" — link to official sources
 7. **Worth Reading**: search "Anthropic blog post", "OpenAI research blog", "Lilian Weng blog", "The Batch newsletter", "Ahead of AI newsletter", "Import AI", "machine learning paper explained" — find the actual URL for each piece. Also identify one book worth recommending.
