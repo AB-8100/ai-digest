@@ -5,19 +5,21 @@ Generates a curated digest of AI developments for AI product managers and consul
 
 Sections:
 - TL;DR
-- Engineering & Model Releases
 - AI Product Management & Frameworks
 - What's Being Built (products, apps, enterprise deployments)
+- AI PM Tools & Skills
 - ML & Technical Fundamentals
 - Jobs & Hiring (UK/London — trends + companies)
 - Regulatory & Governance
 - Worth Reading (books + online)
 - Technical Deep Dive
+- Engineering & Model Releases
 """
 
 import anthropic
 import argparse
 import os
+import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -54,6 +56,17 @@ def send_email(html_content: str, markdown_content: str, date: str):
     print(f"Email sent to {recipient}")
 
 
+def convert_inline_markdown(text: str) -> str:
+    """Convert inline markdown syntax to HTML."""
+    # Links: [text](url)
+    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', text)
+    # Bold: **text**
+    text = re.sub(r'\*\*([^*\n]+)\*\*', r'<strong>\1</strong>', text)
+    # Italic: *text* (single, not double)
+    text = re.sub(r'(?<!\*)\*([^*\n]+)\*(?!\*)', r'<em>\1</em>', text)
+    return text
+
+
 def generate_digest():
     """Generate the weekly AI digest using Claude with web search."""
 
@@ -68,6 +81,8 @@ def generate_digest():
 
     system_prompt = f"""You are an AI analyst producing a weekly digest on {today} for an AI Product Manager at a management consulting firm (Capgemini Invent).
 
+IMPORTANT: Output ONLY the formatted digest content below. Do not include any preamble, meta-commentary, statements about your research process, or phrases like "I now have enough research" or "Based on my searches". Begin your response immediately with **TL;DR**.
+
 Your reader:
 - Works in AI product management and consulting in London — helping enterprise clients adopt and build AI
 - Wants to stay sharp on both the strategic and technical dimensions of AI
@@ -75,6 +90,8 @@ Your reader:
 - Reads broadly: blogs, papers, newsletters, and books
 - Does NOT need private equity content
 - UK-first lens throughout: prioritise UK/London companies, European regulatory context, £ salaries, and UK market data where available. Include US content where it's genuinely significant (major model releases, key frameworks) but default to UK/European perspective
+
+LINKING RULES: Every named framework, tool, product, company, paper, or article MUST include a clickable hyperlink to the original source. Format links as [text](url). Never mention something by name without linking to it if a URL exists.
 
 Structure the digest with these sections exactly, using the emoji headers below:
 
@@ -87,23 +104,14 @@ Structure the digest with these sections exactly, using the emoji headers below:
 
 ---
 
-## 🔧 Engineering & Model Releases
-- What's shipped in the last week across the major labs (OpenAI, Anthropic, Google DeepMind, Meta, Mistral, xAI, open-source)
-- Format: **Model/Tool Name** — what it does, who it's for, what changed vs. prior version
-- Capabilities that matter for enterprise/product use: context windows, multimodal, latency, pricing
-- Links to announcements, release notes, or technical reports
-- Be specific — cite benchmarks and pricing where available
-
----
-
 ## 🧠 AI Product Management & Frameworks
 - Frameworks, methodologies, and mental models for building and shipping AI products
 - AI transformation playbooks (McKinsey, Gartner, BCG, Forrester, Thoughtworks, etc.)
 - Use case prioritisation, ROI estimation, build vs. buy decisions, AI readiness assessment
 - AI product strategy patterns: embedded AI, copilots, autonomous agents, platform plays
 - Maturity models and adoption curves
-- Format: **Framework/Concept** — what it is, when to use it, key insight or principle
-- Cite real sources and link to original material where available
+- Format: **[Framework/Concept](source URL)** — what it is, when to use it, key insight or principle
+- Every framework or concept MUST link to its original source
 
 ---
 
@@ -114,19 +122,35 @@ This section covers the full spectrum of what's being shipped with AI — from e
 - Consumer and prosumer AI tools gaining traction (e.g. Granola for meeting notes, Perplexity, Cursor, Notion AI, etc.)
 - What problem they solve, what makes them interesting, who's building them
 - Startup launches and early products worth watching
-- Format: **Product** (Company / stage) — what it does, what's interesting about the approach, link
+- Format: **[Product](product URL)** (Company / stage) — what it does, what's interesting about the approach
 
 **Enterprise deployments with outcomes**
 - Real AI at enterprise scale — with numbers, not just intent
 - Big Four / consulting firm AI rollouts, sector-specific deployments (finance, healthcare, legal, manufacturing)
 - Agentic and multi-agent architectures in production
-- Format: **Use case / Company / Industry** — problem, approach, result or ROI
+- Format: **Use case / Company / Industry** — problem, approach, result or ROI, [source](url)
 
 **Platform & infrastructure launches**
 - Major feature drops, API changes, platform moves that affect what can be built
-- Format: **Platform / Feature** — what changed, who it unblocks, why it matters now
+- Format: **[Platform / Feature](url)** — what changed, who it unblocks, why it matters now
 
 The goal is a mix of "here's what's real and being used" across all scales — from a solo builder's tool that 50,000 people love, to a KPMG-scale enterprise rollout. Include architecture notes where relevant.
+
+---
+
+## 🛠️ AI PM Tools & Skills
+Practical toolkit for AI Product Managers — specific tools, workflows, and techniques that improve day-to-day efficiency. Rotate across categories each issue:
+
+- **Prompting & orchestration**: prompt management tools, chaining, evaluation frameworks
+- **Research & synthesis**: Perplexity, NotebookLM, Claude Projects, Elicit, Consensus
+- **Product management tools with AI**: Linear AI, Notion AI, Cursor for specs, Coda AI, Fibery
+- **Meeting & async tools**: Granola, Otter, Fireflies, Read.ai — compare what's actually better
+- **Diagramming & architecture**: Miro AI, Whimsical AI, Eraser
+- **Evaluation & testing**: frameworks for measuring AI product quality, evals tools
+- **Data & analytics**: AI-native analytics tools gaining traction in enterprise
+
+Format: **[Tool/Technique](url)** — what it does, how an AI PM uses it day-to-day, free vs. paid, best use case
+Aim for 3–4 tools or techniques per issue. Be honest about limitations — not every tool is worth it.
 
 ---
 
@@ -135,6 +159,7 @@ The goal is a mix of "here's what's real and being used" across all scales — f
 - Topics to rotate across: supervised/unsupervised learning, fine-tuning, RAG, embeddings, vector databases, model evaluation, reinforcement learning, computer vision, time series, classical ML vs. LLMs, model compression, inference optimisation
 - Format: **Topic** — clear explanation, why it matters now, how it connects to current products or deployments
 - Aim for one solid explainer + one recent development in the space
+- Link to the primary source (paper, blog, documentation) for everything mentioned
 - This is the section for building durable technical knowledge, not just following the news
 
 ---
@@ -154,7 +179,7 @@ Two parts — trends first, then specifics:
 - Strongly prioritise London-headquartered or UK-present AI companies
 - Focus on: AI-native startups with London offices (Granola, Harvey, Synthesia, ElevenLabs, Wayve, Quantexa, Luminance, Tractable, Metaview, Isomorphic Labs, etc.), AI fintech firms, consulting firms building AI practices in the UK
 - Include US-headquartered companies only if they have a meaningful London office and UK-based roles
-- Format: **Company** (stage / sector / location) — roles open, what makes it worth considering, link to jobs page
+- Format: **[Company](jobs page URL)** (stage / sector / location) — roles open, what makes it worth considering
 - Flag if a company just raised — hot hiring windows follow funding
 - All salaries in £. If a role only lists USD, flag it as US-based
 - Aim for 4–6 companies per issue, majority UK-based
@@ -163,7 +188,7 @@ Two parts — trends first, then specifics:
 
 ## ⚖️ Regulatory & Governance
 - EU AI Act updates, US executive orders, UK AI Safety Institute, sector-specific guidance
-- Format: **Region/Agency** — what changed, who it affects, key deadline
+- Format: **Region/Agency** — what changed, who it affects, key deadline, [source](url)
 - Flag anything with near-term compliance implications
 
 ---
@@ -189,7 +214,15 @@ Avoid listicles, generic round-ups, and content that's just news dressed as insi
 - One topic explored in 3–4 short paragraphs
 - Should be something that rewards closer attention: a new architecture, a research direction, an emerging capability, or a technique that's moving from research to production
 - Not just agentic AI — rotate across: reasoning models, multimodal systems, efficient inference, retrieval systems, model alignment, synthetic data, evaluation methods, etc.
-- Link to 2–3 key papers, blog posts, or documentation
+- Link to 2–3 key papers, blog posts, or documentation — use full hyperlinks
+
+---
+
+## 🔧 Engineering & Model Releases
+- What's shipped in the last week across the major labs (OpenAI, Anthropic, Google DeepMind, Meta, Mistral, xAI, open-source)
+- Format: **[Model/Tool Name](announcement URL)** — what it does, who it's for, what changed vs. prior version
+- Capabilities that matter for enterprise/product use: context windows, multimodal, latency, pricing
+- Be specific — cite benchmarks and pricing where available
 
 ---
 
@@ -197,32 +230,35 @@ TONE: Informed, direct, slightly opinionated. Write for someone who reads widely
 
 CRITICAL COPYRIGHT RULES:
 - Direct quotes MUST be under 15 words
-- ONE quote per source maximum  
+- ONE quote per source maximum
 - Default to paraphrasing
 - Never reproduce article paragraphs verbatim"""
 
     user_prompt = f"""Generate the weekly AI digest for {today}.
 
-Use 15–20 web searches to cover all sections thoroughly. Search strategy:
+Use 18–22 web searches to cover all sections thoroughly. Search strategy:
 
-1. **Engineering & Models**: search "AI model releases {today[:10]}", "LLM benchmark results 2026", "open source model release"
-2. **AI PM & Frameworks**: search "AI product management framework", "AI transformation methodology", "AI use case prioritisation", "AI maturity model 2026", "Gartner AI", "McKinsey AI framework"
-3. **What's Being Built** (run 3–4 searches here):
-   - Consumer/prosumer apps: search "best new AI tools 2026", "AI app launch startup", "Granola AI", "AI productivity tools"
+1. **AI PM & Frameworks**: search "AI product management framework 2026", "AI transformation methodology", "AI use case prioritisation", "AI maturity model 2026", "Gartner AI", "McKinsey AI framework" — find the primary source URL for each framework mentioned
+2. **What's Being Built** (run 3–4 searches):
+   - Consumer/prosumer apps: search "best new AI tools 2026", "AI app launch startup", "Granola AI update", "AI productivity tools"
    - Enterprise deployments: search "enterprise AI deployment ROI 2026", "Big Four AI rollout", "agentic AI production case study"
    - Infrastructure/platforms: search "AI platform feature launch 2026", "LLM API update"
    - Mix the scale — include at least 2 startup/consumer products and 2 enterprise deployments per issue
-4. **ML Fundamentals**: search recent explainers on one specific ML technique (pick from: RAG, fine-tuning, embeddings, model evaluation, reinforcement learning from human feedback, model compression, vector databases) — look for a strong blog post or paper published in the last week
-5. **Jobs & Hiring**: 
+3. **AI PM Tools & Skills**: search "AI product manager tools 2026", "AI PM workflow tools", "best AI meeting notes tool comparison", "NotebookLM use cases", "Cursor for product managers", "AI tools for consultants 2026", "prompt management tools" — pick 3–4 tools worth highlighting this week
+4. **ML Fundamentals**: search for a strong explainer on one specific ML technique published recently — look for the primary source blog post or paper and link directly to it
+5. **Jobs & Hiring**:
    - UK trends: search "AI jobs London 2026", "AI product manager salary London GBP", "UK AI hiring trends 2026", "London fintech AI roles"
    - Companies: search "AI startup hiring London 2026", "Quantexa jobs", "Synthesia careers London", "Wayve jobs", "Harvey AI London", "Luminance AI hiring", "ElevenLabs London jobs", "Isomorphic Labs careers"
-   - All salaries must be quoted in £ GBP. Do not convert USD figures — note them as US rates if encountered
-   - Look for recently funded UK AI startups that will be in a hiring surge
-6. **Regulatory**: search "EU AI Act update", "AI regulation 2026", "UK AI Safety Institute"
-7. **Worth Reading**: search "Anthropic blog post", "OpenAI research blog", "Lilian Weng blog", "The Batch newsletter", "Ahead of AI newsletter", "Import AI", "machine learning paper explained" — look for the best 1–2 pieces published recently. Also identify one book worth recommending.
-8. **Technical Deep Dive**: pick one technically interesting topic from the last two weeks — something in reasoning, multimodal, efficient inference, synthetic data, or alignment — and search for the primary source (paper, blog) plus good write-ups
+   - All salaries must be quoted in £ GBP. Do not convert USD figures
+   - Look for recently funded UK AI startups in a hiring surge
+6. **Regulatory**: search "EU AI Act update 2026", "AI regulation UK 2026", "UK AI Safety Institute", "AI governance" — link to official sources
+7. **Worth Reading**: search "Anthropic blog post", "OpenAI research blog", "Lilian Weng blog", "The Batch newsletter", "Ahead of AI newsletter", "Import AI", "machine learning paper explained" — find the actual URL for each piece. Also identify one book worth recommending.
+8. **Technical Deep Dive**: pick one technically interesting topic — search for the primary paper or blog post and 1–2 good write-ups. Include direct links.
+9. **Engineering & Models**: search "AI model releases {today[:10]}", "LLM release 2026", "open source model release" — link to official announcements
 
-Format the entire output as clean markdown with clickable links. Be specific with names, dates, and numbers. Skip anything you can't verify."""
+For EVERY item: find and include the direct URL to the source. Format all links as [text](url) in markdown.
+
+Format the entire output as clean markdown. Be specific with names, dates, and numbers. Skip anything you can't verify or link to."""
 
     print(f"Generating weekly AI digest for {today}...")
     print("Searching across all categories — this takes 3–5 minutes...\n")
@@ -252,18 +288,6 @@ Format the entire output as clean markdown with clickable links. Be specific wit
 def convert_to_html(markdown_text: str, date: str) -> str:
     """Convert markdown digest to styled HTML."""
 
-    section_colors = {
-        "TL;DR": "#1e3a5f",
-        "🔧": "#1e40af",
-        "🚀": "#065f46",
-        "🧠": "#4c1d95",
-        "🎯": "#92400e",
-        "📐": "#1e3a5f",
-        "⚖️": "#7f1d1d",
-        "📚": "#064e3b",
-        "🔬": "#1c1917",
-    }
-
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -276,7 +300,7 @@ def convert_to_html(markdown_text: str, date: str) -> str:
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f0f4f8;
             color: #1a202c;
-            line-height: 1.7;
+            line-height: 1.8;
         }}
         .wrapper {{ max-width: 780px; margin: 40px auto; padding: 0 20px 60px; }}
         .header {{
@@ -289,37 +313,78 @@ def convert_to_html(markdown_text: str, date: str) -> str:
         .header h1 {{ font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; }}
         .header .date {{ color: #94a3b8; margin-top: 6px; font-size: 0.9rem; }}
         .tldr {{
-            background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+            background-color: #1e3a5f;
+            background-image: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
             color: white;
             padding: 28px 32px;
             border-radius: 10px;
             margin-bottom: 28px;
         }}
-        .tldr h2 {{ color: white; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }}
-        .tldr li {{ margin: 8px 0; font-size: 0.95rem; line-height: 1.6; }}
-        .tldr strong {{ color: #bfdbfe; }}
+        .tldr h2 {{
+            color: white;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 16px;
+        }}
+        .tldr ul {{ padding-left: 20px; }}
+        .tldr li {{
+            color: white;
+            margin: 10px 0;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }}
+        .tldr strong {{ color: #bfdbfe; font-weight: 600; }}
+        .tldr a {{ color: #93c5fd; }}
         .section {{
             background: white;
             border-radius: 10px;
-            padding: 28px 32px;
-            margin-bottom: 24px;
+            padding: 32px 36px;
+            margin-bottom: 28px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }}
         .section h2 {{
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 18px;
-            padding-bottom: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
             border-bottom: 2px solid #e2e8f0;
         }}
-        .section h3 {{ font-size: 0.95rem; color: #334155; margin: 18px 0 8px; font-weight: 600; }}
-        .section ul {{ padding-left: 20px; margin: 10px 0; }}
-        .section li {{ margin: 8px 0; font-size: 0.93rem; }}
-        .section p {{ font-size: 0.93rem; margin: 8px 0; }}
+        .section h3 {{
+            font-size: 0.95rem;
+            color: #1e40af;
+            margin: 24px 0 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }}
+        .section ul {{ padding-left: 22px; margin: 12px 0; }}
+        .section li {{
+            margin: 12px 0;
+            font-size: 0.93rem;
+            line-height: 1.7;
+        }}
+        .section p {{
+            font-size: 0.93rem;
+            margin: 12px 0;
+            line-height: 1.8;
+        }}
+        .section hr {{
+            border: none;
+            border-top: 1px solid #e2e8f0;
+            margin: 20px 0;
+        }}
+        img {{
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 16px 0;
+            display: block;
+        }}
         a {{ color: #2563eb; text-decoration: none; }}
         a:hover {{ text-decoration: underline; }}
         strong {{ color: #0f172a; font-weight: 600; }}
+        em {{ color: #475569; font-style: italic; }}
         .footer {{ text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 40px; }}
     </style>
 </head>
@@ -335,15 +400,6 @@ def convert_to_html(markdown_text: str, date: str) -> str:
     in_tldr = False
     in_section = False
     in_list = False
-    buffer = []
-
-    def flush_buffer():
-        nonlocal buffer
-        if buffer:
-            html_chunk = '\n'.join(buffer)
-            buffer = []
-            return html_chunk
-        return ""
 
     result_html = html
     i = 0
@@ -369,6 +425,16 @@ def convert_to_html(markdown_text: str, date: str) -> str:
             result_html += "</ul>\n</div>\n"
             in_tldr = False
 
+        # Horizontal rule
+        if line.strip() == '---':
+            if not in_tldr and in_section:
+                if in_list:
+                    result_html += "</ul>\n"
+                    in_list = False
+                result_html += "<hr>\n"
+            i += 1
+            continue
+
         # Main sections
         if line.startswith('## ') and not in_tldr:
             if in_section:
@@ -376,7 +442,8 @@ def convert_to_html(markdown_text: str, date: str) -> str:
                     result_html += "</ul>\n"
                     in_list = False
                 result_html += "</div>\n"
-            result_html += f'<div class="section">\n<h2>{line[3:]}</h2>\n'
+            heading = convert_inline_markdown(line[3:])
+            result_html += f'<div class="section">\n<h2>{heading}</h2>\n'
             in_section = True
             in_list = False
             i += 1
@@ -386,12 +453,24 @@ def convert_to_html(markdown_text: str, date: str) -> str:
             if in_list:
                 result_html += "</ul>\n"
                 in_list = False
-            result_html += f'<h3>{line[4:]}</h3>\n'
+            heading = convert_inline_markdown(line[4:])
+            result_html += f'<h3>{heading}</h3>\n'
+            i += 1
+            continue
+
+        # Images: ![alt](url)
+        img_match = re.match(r'!\[([^\]]*)\]\(([^)]+)\)', line.strip())
+        if img_match:
+            alt, src = img_match.group(1), img_match.group(2)
+            if in_list:
+                result_html += "</ul>\n"
+                in_list = False
+            result_html += f'<img src="{src}" alt="{alt}">\n'
             i += 1
             continue
 
         if line.startswith('- ') or line.startswith('* '):
-            content = line[2:]
+            content = convert_inline_markdown(line[2:])
             if in_tldr:
                 result_html += f'<li>{content}</li>\n'
             else:
@@ -407,7 +486,8 @@ def convert_to_html(markdown_text: str, date: str) -> str:
             if in_list:
                 result_html += "</ul>\n"
                 in_list = False
-            result_html += f'<p>{line}</p>\n'
+            content = convert_inline_markdown(line)
+            result_html += f'<p>{content}</p>\n'
             i += 1
             continue
 
@@ -435,29 +515,8 @@ def convert_to_html(markdown_text: str, date: str) -> str:
     return result_html
 
 
-def save_outputs(markdown_text: str, html_text: str, filename: str):
-    """Save markdown and HTML outputs."""
-
-    output_dir = Path.home() / "Documents" / "AI_Digests"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    md_path = output_dir / f"ai_digest_{filename}.md"
-    html_path = output_dir / f"ai_digest_{filename}.html"
-
-    with open(md_path, 'w', encoding='utf-8') as f:
-        f.write(markdown_text)
-
-    with open(html_path, 'w', encoding='utf-8') as f:
-        f.write(html_text)
-
-    print(f"\n✅ Digest saved!")
-    print(f"📄 Markdown: {md_path}")
-    print(f"🌐 HTML:     {html_path}")
-    print(f"\nTo view: open '{html_path}'")
-
-
 def main():
-    parser = argparse.ArgumentParser(description="Generate fortnightly AI digest")
+    parser = argparse.ArgumentParser(description="Generate weekly AI digest")
     parser.add_argument(
         "--output-dir",
         type=str,
