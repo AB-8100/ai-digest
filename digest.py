@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fortnightly AI Digest Generator
+Weekly AI Digest Generator
 Generates a curated digest of AI developments for AI product managers and consultants.
 
 Sections:
@@ -18,12 +18,44 @@ Sections:
 import anthropic
 import argparse
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from datetime import datetime
 from pathlib import Path
 
 
+def send_email(html_content: str, markdown_content: str, date: str):
+    """Send the digest via email if SMTP env vars are configured."""
+    smtp_host = os.environ.get("SMTP_HOST")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    smtp_from = os.environ.get("SMTP_FROM", smtp_user)
+    recipient = os.environ.get("RECIPIENT_EMAIL")
+
+    if not all([smtp_host, smtp_user, smtp_password, recipient]):
+        print("SMTP env vars not fully set — skipping email delivery.")
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"AI Digest — {date}"
+    msg["From"] = smtp_from
+    msg["To"] = recipient
+
+    msg.attach(MIMEText(markdown_content, "plain"))
+    msg.attach(MIMEText(html_content, "html"))
+
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.sendmail(smtp_from, recipient, msg.as_string())
+
+    print(f"Email sent to {recipient}")
+
+
 def generate_digest():
-    """Generate the fortnightly AI digest using Claude with web search."""
+    """Generate the weekly AI digest using Claude with web search."""
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -34,7 +66,7 @@ def generate_digest():
     today = datetime.now().strftime("%B %d, %Y")
     today_filename = datetime.now().strftime("%Y%m%d")
 
-    system_prompt = f"""You are an AI analyst producing a fortnightly digest on {today} for an AI Product Manager at a management consulting firm (Capgemini Invent). 
+    system_prompt = f"""You are an AI analyst producing a weekly digest on {today} for an AI Product Manager at a management consulting firm (Capgemini Invent).
 
 Your reader:
 - Works in AI product management and consulting in London — helping enterprise clients adopt and build AI
@@ -56,7 +88,7 @@ Structure the digest with these sections exactly, using the emoji headers below:
 ---
 
 ## 🔧 Engineering & Model Releases
-- What's shipped in the last two weeks across the major labs (OpenAI, Anthropic, Google DeepMind, Meta, Mistral, xAI, open-source)
+- What's shipped in the last week across the major labs (OpenAI, Anthropic, Google DeepMind, Meta, Mistral, xAI, open-source)
 - Format: **Model/Tool Name** — what it does, who it's for, what changed vs. prior version
 - Capabilities that matter for enterprise/product use: context windows, multimodal, latency, pricing
 - Links to announcements, release notes, or technical reports
@@ -169,7 +201,7 @@ CRITICAL COPYRIGHT RULES:
 - Default to paraphrasing
 - Never reproduce article paragraphs verbatim"""
 
-    user_prompt = f"""Generate the fortnightly AI digest for {today}.
+    user_prompt = f"""Generate the weekly AI digest for {today}.
 
 Use 15–20 web searches to cover all sections thoroughly. Search strategy:
 
@@ -180,7 +212,7 @@ Use 15–20 web searches to cover all sections thoroughly. Search strategy:
    - Enterprise deployments: search "enterprise AI deployment ROI 2026", "Big Four AI rollout", "agentic AI production case study"
    - Infrastructure/platforms: search "AI platform feature launch 2026", "LLM API update"
    - Mix the scale — include at least 2 startup/consumer products and 2 enterprise deployments per issue
-4. **ML Fundamentals**: search recent explainers on one specific ML technique (pick from: RAG, fine-tuning, embeddings, model evaluation, reinforcement learning from human feedback, model compression, vector databases) — look for a strong blog post or paper published in the last 2 weeks
+4. **ML Fundamentals**: search recent explainers on one specific ML technique (pick from: RAG, fine-tuning, embeddings, model evaluation, reinforcement learning from human feedback, model compression, vector databases) — look for a strong blog post or paper published in the last week
 5. **Jobs & Hiring**: 
    - UK trends: search "AI jobs London 2026", "AI product manager salary London GBP", "UK AI hiring trends 2026", "London fintech AI roles"
    - Companies: search "AI startup hiring London 2026", "Quantexa jobs", "Synthesia careers London", "Wayve jobs", "Harvey AI London", "Luminance AI hiring", "ElevenLabs London jobs", "Isomorphic Labs careers"
@@ -192,7 +224,7 @@ Use 15–20 web searches to cover all sections thoroughly. Search strategy:
 
 Format the entire output as clean markdown with clickable links. Be specific with names, dates, and numbers. Skip anything you can't verify."""
 
-    print(f"Generating AI digest for {today}...")
+    print(f"Generating weekly AI digest for {today}...")
     print("Searching across all categories — this takes 3–5 minutes...\n")
 
     message = client.messages.create(
@@ -295,7 +327,7 @@ def convert_to_html(markdown_text: str, date: str) -> str:
 <div class="wrapper">
     <div class="header">
         <h1>AI Digest</h1>
-        <div class="date">{date} &nbsp;·&nbsp; Fortnightly Edition</div>
+        <div class="date">{date} &nbsp;·&nbsp; Weekly Edition</div>
     </div>
 """
 
@@ -456,8 +488,11 @@ def main():
         print(f"\n✅ Digest saved!")
         print(f"📄 Markdown: {md_path}")
         print(f"🌐 HTML:     {html_path}")
+
+        send_email(digest_html, digest_markdown, today)
+
         print("\n" + "=" * 50)
-        print("Fortnightly AI Digest — done.")
+        print("Weekly AI Digest — done.")
         print("=" * 50)
 
     except Exception as e:
