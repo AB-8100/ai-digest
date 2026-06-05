@@ -1,8 +1,8 @@
-name: Generate Weekly AI Digest
+name: Generate Monthly AI Digest
 
 on:
   schedule:
-    # Runs at 08:00 UTC every Friday
+    # Runs at 08:00 UTC on the first Friday of every month
     - cron: '0 8 * * 5'
   workflow_dispatch:
 
@@ -16,16 +16,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check if first Friday of the month
+        id: week_check
+        run: |
+          DAY=$(date +%d)
+          FORCE="${{ github.event.inputs.force_run }}"
+          if [ "$FORCE" = "true" ]; then
+            echo "run=true" >> $GITHUB_OUTPUT
+          elif [ "$DAY" -le 7 ]; then
+            echo "run=true" >> $GITHUB_OUTPUT
+            echo "First Friday of the month — running."
+          else
+            echo "run=false" >> $GITHUB_OUTPUT
+            echo "Not the first Friday — skipping."
+          fi
+
       - name: Set up Python
+        if: steps.week_check.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install dependencies
+        if: steps.week_check.outputs.run == 'true'
         run: |
           pip install anthropic
 
       - name: Generate and send digest
+        if: steps.week_check.outputs.run == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           RECIPIENT_EMAIL: alexandra.r.brown@outlook.com
@@ -38,6 +56,7 @@ jobs:
           python digest.py --output-dir digests/
 
       - name: Commit and push digest
+        if: steps.week_check.outputs.run == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Actions"
