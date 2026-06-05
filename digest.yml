@@ -4,7 +4,6 @@ on:
   schedule:
     # Runs at 08:00 UTC every Friday — week check below gates actual execution
     - cron: '0 8 * * 5'
-  workflow_dispatch:
 
 jobs:
   generate-digest:
