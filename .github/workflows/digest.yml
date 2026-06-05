@@ -1,8 +1,8 @@
-name: Generate Monthly AI Digest
+name: Generate 4-Weekly AI Digest
 
 on:
   schedule:
-    # Runs at 08:00 UTC on the first Friday of every month
+    # Runs at 08:00 UTC every Friday — week check below gates actual execution
     - cron: '0 8 * * 5'
   workflow_dispatch:
 
@@ -16,19 +16,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check if first Friday of the month
+      - name: Check if digest week (every 4 weeks)
         id: week_check
         run: |
-          DAY=$(date +%d)
-          FORCE="${{ github.event.inputs.force_run }}"
-          if [ "$FORCE" = "true" ]; then
+          # Runs on ISO weeks 1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49
+          WEEK=$(date +%V | sed 's/^0*//')
+          if [ $(( (WEEK - 1) % 4 )) -eq 0 ]; then
             echo "run=true" >> $GITHUB_OUTPUT
-          elif [ "$DAY" -le 7 ]; then
-            echo "run=true" >> $GITHUB_OUTPUT
-            echo "First Friday of the month — running."
+            echo "Week $WEEK — digest week. Running."
           else
             echo "run=false" >> $GITHUB_OUTPUT
-            echo "Not the first Friday — skipping."
+            echo "Week $WEEK — not a digest week. Skipping."
           fi
 
       - name: Set up Python
