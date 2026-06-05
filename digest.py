@@ -269,6 +269,13 @@ Format the entire output as clean markdown. Be specific with names, dates, and n
     print(f"Generating weekly AI digest for {today}...")
     print("Searching across all categories — this takes 3–5 minutes...\n")
 
+    digest_text = call_anthropic_api(client, system_prompt, user_prompt)
+
+    return digest_text, today_filename, today
+
+
+def call_anthropic_api(client: anthropic.Anthropic, system_prompt: str, user_prompt: str) -> str:
+    """Single point of entry for all Anthropic API calls."""
     message = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=16000,
@@ -283,12 +290,7 @@ Format the entire output as clean markdown. Be specific with names, dates, and n
         }]
     )
 
-    digest_text = ""
-    for block in message.content:
-        if block.type == "text":
-            digest_text += block.text
-
-    return digest_text, today_filename, today
+    return "".join(block.text for block in message.content if block.type == "text")
 
 
 def convert_to_html(markdown_text: str, date: str) -> str:
